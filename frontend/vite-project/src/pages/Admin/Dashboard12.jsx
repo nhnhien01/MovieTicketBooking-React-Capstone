@@ -1,39 +1,61 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
-  Film,
   Users,
   Ticket,
   Plus,
   Search,
-  Bell,
-  Settings,
   Star,
   Trash2,
-  Loader2,
   LogOut,
   ChevronRight,
+  Moon,
+  MapPin,
+  Pencil,
+  ArrowLeft,
   Home,
-  ExternalLink,
-  Moon, // Sử dụng Moon cho đúng logo trang chủ
-  Hash,
+  BarChart3,
+  CalendarCheck,
+  Clock,
+  CheckCircle2,
+  XCircle
 } from "lucide-react";
 
 import { useMovieStore } from "../../store/useMovieStore";
 import { useAuthStore } from "../../store/useAuthStore";
+import CinemaManagement from "./CinemaManagement";
+import axiosClient from "../../api/axiosClient"; // Đảm bảo bạn đã có axios instance
 
 export default function Dashboard12() {
   const navigate = useNavigate();
-  const { movies, fetchMovies, loading, deleteMovie } = useMovieStore();
-  const { authUser, logout } = useAuthStore();
+  const { movies, fetchMovies, deleteMovie } = useMovieStore();
+  const { logout } = useAuthStore();
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("movies"); // movies | cinemas | bookings
+  const [bookings, setBookings] = useState([]);
+  const [loadingBookings, setLoadingBookings] = useState(false);
 
   useEffect(() => {
     fetchMovies();
-  }, [fetchMovies]);
+    if (activeTab === "bookings") {
+      fetchBookings();
+    }
+  }, [fetchMovies, activeTab]);
+
+  const fetchBookings = async () => {
+    setLoadingBookings(true);
+    try {
+      const res = await axiosClient.get("/bookings/admin/all");
+      setBookings(res.data);
+    } catch (err) {
+      console.error("Lỗi tải đặt vé:", err);
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
 
   const handleDelete = async (id, title) => {
     if (window.confirm(`Xác nhận gỡ bỏ phim: ${title}?`)) {
@@ -41,26 +63,27 @@ export default function Dashboard12() {
     }
   };
 
-  const filteredMovies = movies.filter((movie) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      movie.title?.toLowerCase().includes(searchLower) ||
-      movie.genre?.some((g) => g.toLowerCase().includes(searchLower))
-    );
-  });
+  // Logic lọc dữ liệu chung cho cả Phim và Đặt vé
+  const filteredMovies = movies.filter((m) =>
+    m.title?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredBookings = bookings.filter((b) =>
+    b.userId?.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    b.movieId?.title?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const stats = [
-    { label: "Doanh Thu", value: "1.25B", trend: "+12.5%" },
-    { label: "Vé Bán Ra", value: "14,205", trend: "+8.2%" },
-    { label: "Phim Hệ Thống", value: movies.length, trend: "Stable" },
-    { label: "Khách Hàng", value: "2,840", trend: "+24%" },
+    { label: "Doanh Thu", value: "1.25B", trend: "+12.5%", icon: <BarChart3 size={20} /> },
+    { label: "Vé Bán Ra", value: "14,205", trend: "+8.2%", icon: <Ticket size={20} /> },
+    { label: "Chi Nhánh", value: "35", trend: "Ổn định", icon: <MapPin size={20} /> },
+    { label: "Khách Hàng", value: "2,840", trend: "+24%", icon: <Users size={20} /> },
   ];
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] text-slate-800 flex font-sans antialiased">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex font-sans antialiased">
       {/* SIDEBAR */}
-      <aside className="w-72 bg-white border-r border-slate-100 hidden xl:flex flex-col p-6 sticky top-0 h-screen shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-        {/* LOGO LUNA CINEMA - THEO PHONG CÁCH BRUTALISM CỦA BẠN */}
+      <aside className="w-72 bg-white border-r border-slate-200 hidden xl:flex flex-col p-6 sticky top-0 h-screen shadow-sm">
         <div className="px-4 py-8">
           <Link to="/" className="flex items-center gap-2 group outline-none">
             <div className="bg-amber-400 border-[2.5px] border-black p-1.5 -rotate-2 group-hover:rotate-3 group-hover:scale-110 transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
@@ -70,256 +93,222 @@ export default function Dashboard12() {
               <span className="text-2xl font-black tracking-tighter italic uppercase text-black leading-none">
                 Luna<span className="text-amber-500"> Cinema</span>
               </span>
-              <span className="text-[10px] font-bold text-slate-400 tracking-[0.2em] uppercase mt-1">
-                Administrator
-              </span>
+              <span className="text-[10px] font-bold text-slate-400 tracking-[0.2em] uppercase mt-1">Administrator</span>
             </div>
           </Link>
         </div>
 
         <nav className="flex-1 space-y-2 px-2">
-          {/* Nút về trang chủ cũng theo style Amber */}
-          <Link
-            to="/"
-            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold text-sm text-slate-500 hover:text-amber-600 hover:bg-amber-50 mb-4 border border-dashed border-slate-200 hover:border-amber-400"
-          >
-            <Home size={18} /> <span>Về Trang Chủ</span>
-            <ExternalLink size={14} className="ml-auto opacity-50" />
-          </Link>
-
-          <div className="h-[1px] bg-slate-100 my-4 mx-4" />
-
-          <NavItem
-            icon={<LayoutDashboard size={18} />}
-            label="Tổng quan"
-            active
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4 mb-4">Điều hành</div>
+          
+          <NavItem 
+            icon={<LayoutDashboard size={18} />} 
+            label="Tổng quan phim" 
+            active={activeTab === "movies"} 
+            onClick={() => { setActiveTab("movies"); setSearchTerm(""); }}
           />
-          <NavItem
-            icon={<Film size={18} />}
-            label="Quản lý phim"
-            onClick={() => navigate("/admin/add-movie")}
+          <NavItem 
+            icon={<MapPin size={18} />} 
+            label="Quản lý rạp" 
+            active={activeTab === "cinemas"}
+            onClick={() => { setActiveTab("cinemas"); setSearchTerm(""); }}
           />
-          <NavItem icon={<Ticket size={18} />} label="Lịch chiếu" />
-          <NavItem
-            icon={<Users size={18} />}
-            label="Người dùng"
-            onClick={() => navigate("/admin/users")}
+          <NavItem 
+            icon={<CalendarCheck size={18} />} 
+            label="Quản lý đặt vé" 
+            active={activeTab === "bookings"}
+            onClick={() => { setActiveTab("bookings"); setSearchTerm(""); }} 
           />
+          
+          <div className="pt-6">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4 mb-4">Dữ liệu & Nhân sự</div>
+            <NavItem 
+              icon={<Plus size={18} strokeWidth={3} />} 
+              label="Thêm phim mới" 
+              onClick={() => navigate("/admin/add-movie")}
+            />
+            <NavItem 
+              icon={<Users size={18} />} 
+              label="Người dùng" 
+              onClick={() => navigate("/admin/users")} 
+            />
+          </div>
         </nav>
 
-        {/* User Profile Section */}
-        <div className="mt-auto bg-slate-50 p-4 rounded-3xl border border-slate-100">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-400 border-2 border-black flex items-center justify-center text-black font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-lg">
-              {authUser?.displayName?.charAt(0) || "A"}
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-xs font-bold text-slate-900 truncate">
-                {authUser?.displayName || "Admin"}
-              </p>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                Administrator
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={logout}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-red-500 hover:bg-red-100/50 transition-colors"
-          >
+        <div className="mt-auto space-y-3">
+          <button onClick={() => navigate("/")} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-100 text-slate-600 font-black text-xs uppercase hover:bg-black hover:text-white transition-all border border-slate-200">
+            <Home size={16} /> Về trang chủ
+          </button>
+          <button onClick={logout} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-black uppercase text-white bg-red-500 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-600 transition-all">
             <LogOut size={14} /> Thoát hệ thống
           </button>
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto bg-[#F8FAFC]">
-        {/* TOP HEADER */}
-        <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">
-              DASHBOARD
-            </h1>
-            <p className="text-slate-400 text-sm font-medium italic uppercase tracking-wider">
-              Hệ thống quản trị Luna Cinema
-            </p>
+      <main className="flex-1 p-6 md:p-10 overflow-y-auto">
+        <header className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+          <div className="flex items-center gap-5 w-full md:w-auto">
+            <button onClick={() => navigate(-1)} className="flex items-center justify-center w-12 h-12 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all rounded-xl group">
+              <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            </button>
+            <div>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">
+                {activeTab === "movies" ? "Quản lý phim" : activeTab === "cinemas" ? "Hệ thống rạp" : "Quản lý đặt vé"}
+              </h1>
+              <p className="text-slate-400 text-[10px] font-bold italic uppercase tracking-[0.2em] mt-1.5">
+                Luna Cinema <span className="text-amber-500 mx-1">•</span> Control Center
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="relative flex-1 md:w-96 group">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-amber-500 transition-colors"
-                size={18}
-              />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-amber-500 transition-colors" size={18} />
               <input
                 type="text"
-                placeholder="Tìm tên phim hoặc thể loại..."
+                placeholder="Tìm kiếm thông tin..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-amber-400/10 focus:border-amber-400 transition-all shadow-sm"
+                className="w-full bg-white border-2 border-slate-200 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:outline-none focus:border-black focus:ring-4 focus:ring-amber-400/20 transition-all shadow-sm"
               />
             </div>
-            <button className="bg-white p-3.5 rounded-2xl border border-slate-200 text-slate-500 hover:text-amber-500 transition-all shadow-sm relative group">
-              <Bell size={20} className="group-hover:shake" />
-              <span className="absolute top-3.5 right-3.5 w-2 h-2 bg-amber-500 rounded-full border-2 border-white" />
-            </button>
           </div>
         </header>
 
-        {/* STATS CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* STATS CARDS (Giữ nguyên) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           {stats.map((s, i) => (
-            <motion.div
-              key={i}
-              whileHover={{ y: -4 }}
-              className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col group hover:border-amber-200 transition-colors"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                  {s.label}
-                </span>
-                <span className="text-[11px] font-bold px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg">
-                  {s.trend}
-                </span>
+            <motion.div key={i} whileHover={{ y: -5 }} className="bg-white p-6 rounded-[2rem] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,0.05)] relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">{s.icon}</div>
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{s.label}</span>
+                <span className="text-[10px] font-black px-2 py-1 bg-green-100 text-green-700 rounded-lg">{s.trend}</span>
               </div>
-              <h2 className="text-3xl font-black text-slate-900 group-hover:text-amber-600 transition-colors">
-                {s.value}
-              </h2>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tighter">{s.value}</h2>
             </motion.div>
           ))}
         </div>
 
-        {/* DATA TABLE CONTAINER */}
-        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-          <div className="p-8 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-slate-50">
-            <div>
+        {/* DATA CONTAINER */}
+        <div className="bg-white rounded-[2.5rem] border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,0.03)] overflow-hidden min-h-[500px]">
+          <div className="p-8 flex flex-col md:flex-row justify-between items-center gap-4 border-b-2 border-slate-100 bg-slate-50/30">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-8 bg-amber-400 rounded-full"></div>
               <h3 className="font-black text-slate-900 text-xl tracking-tight uppercase italic">
-                Quản lý kho phim
+                {activeTab === "movies" ? "Kho phim hiện có" : activeTab === "cinemas" ? "Danh sách chi nhánh" : "Lịch sử giao dịch"}
               </h3>
-              <p className="text-slate-400 text-sm font-medium mt-1">
-                {searchTerm
-                  ? `Kết quả tìm kiếm cho: "${searchTerm}"`
-                  : `Tổng cộng ${movies.length} tác phẩm`}
-              </p>
             </div>
-            <Link
-              to="/admin/add-movie"
-              className="w-full md:w-auto bg-black text-amber-400 border-2 border-black px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-[4px_4px_0px_0px_rgba(251,191,36,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1"
-            >
-              <Plus size={20} strokeWidth={3} /> THÊM PHIM MỚI
-            </Link>
+            
+            {activeTab !== "bookings" && (
+              <button 
+                onClick={() => activeTab === "movies" ? navigate("/admin/add-movie") : alert("Thêm rạp mới")}
+                className="bg-black text-amber-400 border-2 border-black px-8 py-3.5 rounded-2xl font-black text-xs uppercase shadow-[4px_4px_0px_0px_rgba(251,191,36,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all flex items-center gap-2"
+              >
+                <Plus size={18} strokeWidth={3} /> {activeTab === "movies" ? "Thêm phim" : "Mở chi nhánh"}
+              </button>
+            )}
           </div>
 
-          <div className="overflow-x-auto px-6 pb-6">
-            {loading ? (
-              <div className="py-24 flex flex-col items-center justify-center text-amber-500">
-                <Loader2 className="animate-spin mb-4" size={40} />
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest italic">
-                  Syncing with database...
-                </span>
-              </div>
-            ) : (
-              <table className="w-full border-separate border-spacing-y-3">
-                <thead>
-                  <tr className="text-slate-400 text-[11px] font-black uppercase tracking-[0.15em]">
-                    <th className="pb-2 px-4 text-center w-16">STT</th>
-                    <th className="pb-2 px-4 text-left">Phim & Mã định danh</th>
-                    <th className="pb-2 text-left">Thể loại</th>
-                    <th className="pb-2 text-left">Đánh giá</th>
-                    <th className="pb-2 text-left">Trạng thái</th>
-                    <th className="pb-2 text-right px-6">Hành động</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredMovies.length > 0 ? (
-                    filteredMovies.map((movie, index) => (
-                      <tr key={movie._id} className="group">
-                        <td className="py-4 text-center bg-slate-50 group-hover:bg-amber-50 rounded-l-3xl font-black text-slate-400 group-hover:text-amber-600 transition-colors">
-                          #{index + 1}
-                        </td>
-
-                        <td className="py-4 px-4 bg-slate-50 group-hover:bg-amber-50 transition-colors">
-                          <div className="flex items-center gap-4">
-                            <div className="relative">
-                              <img
-                                src={movie.posterUrl}
-                                className="w-12 h-16 rounded-xl object-cover border-2 border-transparent group-hover:border-black transition-all shadow-sm"
-                                alt={movie.title}
-                              />
-                            </div>
-                            <div>
-                              <p className="font-black text-slate-900 text-sm line-clamp-1 uppercase italic tracking-tight">
-                                {movie.title}
-                              </p>
-                              <p className="text-[10px] text-slate-400 font-bold mt-1 tracking-tighter">
-                                ID: {movie._id.slice(-8)}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 bg-slate-50 group-hover:bg-amber-50 transition-colors">
-                          <span className="text-[9px] font-black bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 uppercase group-hover:border-amber-400 transition-colors">
-                            {movie.genre?.[0] || "N/A"}
-                          </span>
-                        </td>
-                        <td className="py-4 bg-slate-50 group-hover:bg-amber-50 transition-colors">
-                          <div className="flex items-center gap-1.5 font-black text-slate-900 text-sm">
-                            <Star
-                              size={14}
-                              className="text-amber-500 fill-amber-500"
-                            />
-                            <span>{movie.rating}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 bg-slate-50 group-hover:bg-amber-50 transition-colors">
-                          <div
-                            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tight
-                            ${movie.status === "showing" ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-blue-100 text-blue-700 border border-blue-200"}`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${movie.status === "showing" ? "bg-emerald-500" : "bg-blue-500"}`}
-                            />
-                            {movie.status === "showing"
-                              ? "Đang chiếu"
-                              : "Sắp chiếu"}
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-right bg-slate-50 group-hover:bg-amber-50 rounded-r-3xl transition-colors">
-                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() =>
-                                navigate(`/admin/edit-movie/${movie._id}`)
-                              }
-                              className="p-2.5 bg-white text-slate-600 hover:text-black hover:bg-amber-400 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
-                            >
-                              <Settings size={16} />
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleDelete(movie._id, movie.title)
-                              }
-                              className="p-2.5 bg-white text-slate-600 hover:text-white hover:bg-red-500 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="py-20 text-center">
-                        <div className="inline-flex flex-col items-center">
-                          <Search size={40} className="text-slate-200 mb-4" />
-                          <p className="text-slate-400 font-bold italic uppercase tracking-widest">
-                            Không tìm thấy phim: "{searchTerm}"
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
+          <div className="p-6">
+            <AnimatePresence mode="wait">
+              {activeTab === "movies" ? (
+                <motion.div key="movies-table" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                  <div className="overflow-x-auto px-2 pb-6">
+                    <table className="w-full border-separate border-spacing-y-3">
+                      <thead>
+                        <tr className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
+                          <th className="pb-2 px-4 text-center w-16">STT</th>
+                          <th className="pb-2 text-left">Tên phim</th>
+                          <th className="pb-2 text-left">Đánh giá</th>
+                          <th className="pb-2 text-right px-6">Hành động</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredMovies.map((movie, index) => (
+                          <tr key={movie._id} className="group">
+                            <td className="py-4 text-center bg-slate-50 border-y-2 border-l-2 border-slate-100 rounded-l-2xl font-black text-slate-400">{String(index + 1).padStart(2, '0')}</td>
+                            <td className="py-4 px-4 bg-slate-50 border-y-2 border-slate-100">
+                              <div className="flex items-center gap-4">
+                                <img src={movie.posterUrl} className="w-12 h-16 rounded-xl object-cover border-2 border-white shadow-sm" alt="" />
+                                <span className="font-black text-sm uppercase italic tracking-tighter">{movie.title}</span>
+                              </div>
+                            </td>
+                            <td className="py-4 bg-slate-50 border-y-2 border-slate-100">
+                                <div className="flex items-center gap-1 font-black text-amber-500 text-sm">
+                                    <Star size={14} fill="currentColor"/> {movie.rating}
+                                </div>
+                            </td>
+                            <td className="py-4 pr-6 text-right bg-slate-50 border-y-2 border-r-2 border-slate-100 rounded-r-2xl">
+                                <div className="flex justify-end gap-2">
+                                    <button onClick={() => navigate(`/admin/update-movie/${movie._id}`)} className="p-2.5 bg-white border-2 border-black hover:bg-cyan-400 transition-all rounded-xl"><Pencil size={18}/></button>
+                                    <button onClick={() => handleDelete(movie._id, movie.title)} className="p-2.5 bg-white border-2 border-black hover:bg-red-500 hover:text-white transition-all rounded-xl"><Trash2 size={18}/></button>
+                                </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </motion.div>
+              ) : activeTab === "cinemas" ? (
+                <motion.div key="cinemas-table" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                  <CinemaManagement externalSearch={searchTerm} />
+                </motion.div>
+              ) : (
+                <motion.div key="bookings-table" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                  <div className="overflow-x-auto px-2 pb-6">
+                    <table className="w-full border-separate border-spacing-y-4">
+                      <thead>
+                        <tr className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] text-left">
+                          <th className="px-6">Khách hàng</th>
+                          <th>Phim / Rạp</th>
+                          <th>Ghế</th>
+                          <th>Tổng tiền</th>
+                          <th>Trạng thái</th>
+                          <th className="text-right px-6">Ngày đặt</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loadingBookings ? (
+                          <tr><td colSpan="6" className="text-center py-20 font-black uppercase italic text-slate-400">Đang tải dữ liệu vé...</td></tr>
+                        ) : filteredBookings.map((booking) => (
+                          <tr key={booking._id} className="group">
+                            <td className="bg-slate-50 border-y-2 border-l-2 border-slate-100 p-4 rounded-l-2xl">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center border border-black shadow-[2px_2px_0_0_black] font-black text-xs">
+                                  {booking.userId?.displayName?.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="font-black text-[11px] uppercase italic">{booking.userId?.displayName || "N/A"}</p>
+                                  <p className="text-[9px] font-bold text-slate-400">{booking.userId?.phone || "No Phone"}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="bg-slate-50 border-y-2 border-slate-100 p-4">
+                              <p className="font-black text-[11px] uppercase tracking-tighter">{booking.movieId?.title}</p>
+                              <p className="text-[9px] font-bold text-amber-600 uppercase italic">Chi nhánh số #1</p>
+                            </td>
+                            <td className="bg-slate-50 border-y-2 border-slate-100 p-4">
+                              <div className="flex flex-wrap gap-1">
+                                {booking.seats?.map(s => <span key={s} className="bg-black text-amber-400 text-[9px] font-black px-1.5 py-0.5 rounded uppercase">{s}</span>)}
+                              </div>
+                            </td>
+                            <td className="bg-slate-50 border-y-2 border-slate-100 p-4 font-black text-xs italic">{booking.totalAmount?.toLocaleString()}đ</td>
+                            <td className="bg-slate-50 border-y-2 border-slate-100 p-4 text-center">
+                              <StatusBadge status={booking.status} />
+                            </td>
+                            <td className="bg-slate-50 border-y-2 border-r-2 border-slate-100 p-4 rounded-r-2xl text-right text-[10px] font-black text-slate-400">
+                              {new Date(booking.createdAt).toLocaleDateString('vi-VN')}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </main>
@@ -327,19 +316,33 @@ export default function Dashboard12() {
   );
 }
 
+// Sub-components giữ nguyên logic cũ của bạn
 function NavItem({ icon, label, active = false, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-black text-sm uppercase tracking-tight
-        ${
-          active
-            ? "bg-amber-400 text-black border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] translate-x-1 translate-y-[-2px]"
-            : "text-slate-400 hover:text-black hover:bg-amber-50 hover:translate-x-1"
-        }`}
+      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-black text-sm uppercase tracking-tight border-2
+        ${active 
+          ? "bg-amber-400 text-black border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] translate-x-1 translate-y-[-2px]" 
+          : "text-slate-400 border-transparent hover:text-black hover:bg-white hover:border-slate-200 hover:translate-x-1"}`}
     >
-      {icon} <span className="flex-1 text-left">{label}</span>
+      <span className={active ? "text-black" : "text-slate-400"}>{icon}</span>
+      <span className="flex-1 text-left">{label}</span>
       {active && <ChevronRight size={14} strokeWidth={3} />}
     </button>
   );
+}
+
+function StatusBadge({ status }) {
+    const config = {
+      confirmed: { color: "bg-emerald-100 text-emerald-600 border-emerald-200", icon: <CheckCircle2 size={12} />, text: "Xác nhận" },
+      pending: { color: "bg-amber-100 text-amber-600 border-amber-200", icon: <Clock size={12} />, text: "Chờ" },
+      cancelled: { color: "bg-red-100 text-red-600 border-red-200", icon: <XCircle size={12} />, text: "Hủy" },
+    };
+    const { color, icon, text } = config[status] || config.pending;
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[8px] font-black uppercase ${color}`}>
+        {icon} {text}
+      </span>
+    );
 }

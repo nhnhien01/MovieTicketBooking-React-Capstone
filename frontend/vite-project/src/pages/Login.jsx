@@ -182,7 +182,7 @@ export default function Login() {
               onClick={() => { setIsRegister(!isRegister); reset(); }} 
               className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 hover:text-amber-600 transition-all border-b-2 border-amber-400 pb-0.5"
             >
-              {isRegister ? "Đã có tài khoản? Đăng nhập" : "Tạo tài khoản thành viên"}
+              {isRegister ? "Đã có tài khoản? Đăng nhập" : "Chưa có tài khoản? Đăng ký ngay"}
             </button>
           </div>
         </div>

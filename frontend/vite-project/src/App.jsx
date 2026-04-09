@@ -7,16 +7,18 @@ import { Loader2 } from "lucide-react";
 import Navbar1 from "./components/Navbar1";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Home1 from "./pages/Home1";
-import MoviesPage from "./pages/MoviesPage"; 
+import MoviesPage from "./pages/MoviesPage";
 import Login from "./pages/Login";
 import MovieDetail from "./pages/MovieDetail";
 import UserProfile from "./pages/Client/UserProfile";
 import AdminDashboard from "./pages/Admin/Dashboard12";
 import AddMovie from "./pages/Admin/AddMovie";
 import MovieUpdate from "./pages/Admin/MovieUpdate";
-// Kiểm tra kỹ đường dẫn này: Admin hay admin?
-import UserManagement from "./pages/Admin/UserManagement"; 
-
+import UserManagement from "./pages/Admin/UserManagement";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CustomerCare from "./pages/CustomerCare";
+import FAQ from "./pages/FAQ";
+import CinemasPage   from "./pages/CinemasPage";
 export default function App() {
   const { checkAuth, isCheckingAuth, authUser } = useAuthStore();
   const location = useLocation();
@@ -46,8 +48,12 @@ export default function App() {
       {showNavbar && <Navbar1 />}
 
       <Routes>
+        <Route path="/cinemas" element={<CinemasPage />} />
         <Route path="/" element={<Home1 />} />
         <Route path="/movies" element={<MoviesPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/customer-care" element={<CustomerCare />} />
+        <Route path="/faq" element={<FAQ />} />
 
         <Route
           path="/login"
@@ -58,7 +64,9 @@ export default function App() {
 
         <Route
           path="/profile"
-          element={authUser ? <UserProfile /> : <Navigate to="/login" replace />}
+          element={
+            authUser ? <UserProfile /> : <Navigate to="/login" replace />
+          }
         />
 
         {/* Cụm Admin - Đã sửa lỗi path */}

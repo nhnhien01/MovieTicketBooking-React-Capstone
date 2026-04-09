@@ -2,7 +2,6 @@ import { create } from "zustand";
 import axiosClient from "../api/axiosClient";
 import { toast } from "sonner";
 
-// Hàm helper làm sạch ID để tránh lỗi 400/404
 const cleanId = (id) => (typeof id === "string" ? id.replace(/:/g, "").trim() : id);
 
 export const useMovieStore = create((set, get) => ({
@@ -10,7 +9,6 @@ export const useMovieStore = create((set, get) => ({
   loading: false,
   currentMovie: null,
 
-  // 1. LẤY TẤT CẢ DANH SÁCH PHIM
   fetchMovies: async () => {
     set({ loading: true });
     try {
@@ -22,7 +20,6 @@ export const useMovieStore = create((set, get) => ({
     }
   },
 
-  // 2. LẤY CHI TIẾT 1 BỘ PHIM
   fetchMovieById: async (id) => {
     const safeId = cleanId(id);
     set({ loading: true });
@@ -35,7 +32,6 @@ export const useMovieStore = create((set, get) => ({
     }
   },
 
-  // 3. THÊM PHIM MỚI
   addMovie: async (movieData) => {
     set({ loading: true });
     try {
@@ -53,7 +49,6 @@ export const useMovieStore = create((set, get) => ({
     }
   },
 
-  // 4. XÓA PHIM
   deleteMovie: async (id) => {
     const safeId = cleanId(id);
     try {
@@ -67,13 +62,14 @@ export const useMovieStore = create((set, get) => ({
     }
   },
 
-  // 5. CẬP NHẬT PHIM (FIX LỖI 400 TẠI ĐÂY)
   updateMovie: async (id, updatedData) => {
     const safeId = cleanId(id);
     set({ loading: true });
     try {
-      // LOẠI BỎ CÁC TRƯỜNG HỆ THỐNG TRƯỚC KHI GỬI
-      const { _id, createdAt, updatedAt, __v, ...finalData } = updatedData;
+      // SỬA NHẸ Ở ĐÂY: 
+      // Loại bỏ thêm trường 'language' (nếu có) để tránh xung đột với Mongoose Index 
+      // mà mình đã xử lý ở backend.
+      const { _id, createdAt, updatedAt, __v, language, ...finalData } = updatedData;
 
       const res = await axiosClient.put(`/movies/${safeId}`, finalData);
       
@@ -86,10 +82,8 @@ export const useMovieStore = create((set, get) => ({
       return { success: true };
     } catch (error) {
       set({ loading: false });
-      // Hiển thị chi tiết lỗi từ Backend trả về
       const errorMsg = error.response?.data?.error || error.response?.data?.message || "Lỗi dữ liệu";
       toast.error(`Lỗi: ${errorMsg}`);
-      console.error("Lỗi Store Update:", error.response?.data);
       return { success: false };
     }
   }

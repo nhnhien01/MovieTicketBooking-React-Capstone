@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Mail, Phone, Calendar, LogOut, 
-  Camera, Edit3, Save, X, Lock, KeyRound, Loader2, ShieldCheck 
+  Camera, Edit3, Save, X, Loader2 
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -19,18 +19,15 @@ export default function UserProfile() {
   const [formData, setFormData] = useState({
     displayName: "",
     phone: "",
-    oldPassword: "",
-    newPassword: "",
-    confirmPassword: ""
   });
 
+  // Đồng bộ dữ liệu người dùng vào form khi component mount hoặc authUser thay đổi
   useEffect(() => {
     if (authUser) {
-      setFormData((prev) => ({
-        ...prev,
+      setFormData({
         displayName: authUser.displayName || "",
         phone: authUser.phone || "",
-      }));
+      });
     }
   }, [authUser]);
 
@@ -70,26 +67,6 @@ export default function UserProfile() {
     }
   };
 
-  const handleChangePassword = async () => {
-    if (!formData.oldPassword || !formData.newPassword) return toast.error("Vui lòng nhập mật khẩu");
-    if (formData.newPassword !== formData.confirmPassword) {
-      return toast.error("Mật khẩu xác nhận không khớp!");
-    }
-    try {
-      setLoading(true);
-      await axiosClient.put("/auth/change-password", {
-        oldPassword: formData.oldPassword,
-        newPassword: formData.newPassword
-      });
-      toast.success("Đổi mật khẩu thành công!");
-      setFormData({ ...formData, oldPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Lỗi đổi mật khẩu");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (!authUser) return (
     <div className="h-screen w-full flex items-center justify-center bg-[#fdfcf0]">
         <Loader2 className="animate-spin text-amber-500" size={40} />
@@ -100,7 +77,7 @@ export default function UserProfile() {
     <div className="min-h-screen bg-[#fdfcf0] pt-24 pb-20 font-sans text-slate-900">
       <div className="max-w-5xl mx-auto px-6">
         
-        {/* Header */}
+        {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <h1 className="text-4xl md:text-5xl font-black italic tracking-tight">
@@ -113,13 +90,13 @@ export default function UserProfile() {
               onClick={() => setActiveTab("info")} 
               className={`px-6 py-2 rounded-xl font-bold text-xs uppercase transition-all ${activeTab === 'info' ? 'bg-amber-400 text-black' : 'text-slate-500 hover:bg-slate-50'}`}
             >
-              Hồ sơ
+              Hồ sơ người dùng
             </button>
             <button 
               onClick={() => setActiveTab("history")} 
               className={`px-6 py-2 rounded-xl font-bold text-xs uppercase transition-all ${activeTab === 'history' ? 'bg-amber-400 text-black' : 'text-slate-500 hover:bg-slate-50'}`}
             >
-              Lịch sử
+              Lịch sử đặt vé
             </button>
           </div>
         </div>
@@ -157,13 +134,12 @@ export default function UserProfile() {
             </div>
           </div>
 
-          {/* Cột phải: Form Content */}
+          {/* Cột phải: Nội dung chính */}
           <div className="lg:col-span-8">
             <AnimatePresence mode="wait">
               {activeTab === "info" ? (
                 <motion.div key="info" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
                   
-                  {/* Card Thông tin cá nhân */}
                   <div className="bg-white border-[3px] border-black rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                     <div className="flex justify-between items-center mb-8">
                       <h3 className="text-xl font-black italic flex items-center gap-2">
@@ -175,7 +151,7 @@ export default function UserProfile() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      {/* Tên - Có thể sửa */}
+                      {/* Tên hiển thị */}
                       <div className="p-4 rounded-2xl border-2 border-slate-100 bg-slate-50/50">
                         <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5 mb-2">
                           <User size={14}/> Họ và Tên
@@ -192,7 +168,7 @@ export default function UserProfile() {
                         )}
                       </div>
 
-                      {/* SĐT - Có thể sửa */}
+                      {/* Số điện thoại */}
                       <div className="p-4 rounded-2xl border-2 border-slate-100 bg-slate-50/50">
                         <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5 mb-2">
                           <Phone size={14}/> Số điện thoại
@@ -209,7 +185,7 @@ export default function UserProfile() {
                         )}
                       </div>
 
-                      {/* Email - Chỉ đọc */}
+                      {/* Email - Read Only */}
                       <div className="p-4 rounded-2xl border-2 border-slate-100 bg-slate-50/30 opacity-80">
                         <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5 mb-2">
                           <Mail size={14}/> Địa chỉ Email
@@ -217,7 +193,7 @@ export default function UserProfile() {
                         <p className="font-bold text-slate-500 ml-1 italic">{authUser.email}</p>
                       </div>
 
-                      {/* Ngày gia nhập - Chỉ đọc */}
+                      {/* Ngày gia nhập - Read Only */}
                       <div className="p-4 rounded-2xl border-2 border-slate-100 bg-slate-50/30 opacity-80">
                         <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5 mb-2">
                           <Calendar size={14}/> Ngày gia nhập
@@ -238,49 +214,6 @@ export default function UserProfile() {
                         {loading ? <Loader2 size={16} className="animate-spin"/> : <Save size={16}/>} Lưu hồ sơ mới
                       </motion.button>
                     )}
-                  </div>
-
-                  {/* Card Bảo mật */}
-                  <div className="bg-white border-[3px] border-black rounded-[2rem] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                    <h3 className="text-xl font-black italic flex items-center gap-2 mb-6">
-                      <Lock size={20} className="text-amber-500" /> Thay đổi mật khẩu
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                      <div className="space-y-2">
-                        <p className="text-[9px] font-black uppercase text-slate-400 ml-1">Mật khẩu hiện tại</p>
-                        <input 
-                          type="password" 
-                          value={formData.oldPassword}
-                          onChange={(e) => setFormData({...formData, oldPassword: e.target.value})}
-                          className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-bold focus:border-black outline-none transition-all"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-[9px] font-black uppercase text-slate-400 ml-1">Mật khẩu mới</p>
-                        <input 
-                          type="password" 
-                          value={formData.newPassword}
-                          onChange={(e) => setFormData({...formData, newPassword: e.target.value})}
-                          className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-bold focus:border-black outline-none transition-all"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-[9px] font-black uppercase text-slate-400 ml-1">Xác nhận lại</p>
-                        <input 
-                          type="password" 
-                          value={formData.confirmPassword}
-                          onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                          className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-bold focus:border-black outline-none transition-all"
-                        />
-                      </div>
-                    </div>
-                    <button 
-                      onClick={handleChangePassword} 
-                      disabled={loading} 
-                      className="w-full md:w-auto px-10 py-3 bg-amber-400 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 rounded-xl font-black text-[10px] uppercase transition-all"
-                    >
-                      Cập nhật bảo mật
-                    </button>
                   </div>
                 </motion.div>
               ) : (

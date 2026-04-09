@@ -51,7 +51,7 @@ export default function Navbar1() {
             );
           })}
           
-          {/* --- NÚT ADMIN CHỈ HIỆN KHI LÀ ADMIN --- */}
+          {/* --- NÚT ADMIN  --- */}
           {authUser?.role === "admin" && (
             <Link 
               to="/admin/movies" 
@@ -83,7 +83,7 @@ export default function Navbar1() {
                 </div>
                 
                 <div className="flex flex-col items-start leading-none">
-                  {/* HIỂN THỊ ROLE ADMIN NGAY TẠI ĐÂY NẾU CÓ */}
+                  {/* HIỂN THỊ ROLE ADMIN */}
                   <span className={`text-[9px] font-black uppercase tracking-widest mb-1 ${authUser?.role === 'admin' ? 'text-amber-600' : 'text-gray-400'}`}>
                     {authUser?.role === "admin" ? "ADMINISTRATOR" : (lang === "vi" ? "Thành viên" : "Member")}
                   </span>

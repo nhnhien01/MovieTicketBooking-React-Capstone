@@ -1,47 +1,42 @@
 import User from "../models/User.js";
 
-// Lấy thông tin cá nhân
+// 1. Lấy thông tin cá nhân (Của chính mình)
 export const authMe = async (req, res) => {
     try {
         const user = req.user;
-        if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng!" });
-
-        return res.status(200).json({
-            success: true,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                displayName: user.displayName, 
-                phone: user.phone || "",
-                profilePic: user.avatarUrl || "", 
-                role: user.role,
-                createdAt: user.createdAt
-            }
-        });
+        if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy!" });
+        res.status(200).json({ success: true, user });
     } catch (error) {
         res.status(500).json({ success: false, message: "Lỗi hệ thống" });
     }
 };
 
-// CẬP NHẬT THÔNG TIN (Hàm này giúp bạn bấm Lưu thành công)
+// 2. LẤY TẤT CẢ NGƯỜI DÙNG (Dành cho trang Quản lý) - THÊM MỚI HÀM NÀY
+export const getAllUsers = async (req, res) => {
+    try {
+        // Chỉ cho phép Admin lấy toàn bộ danh sách
+        if (req.user.role !== "admin") {
+            return res.status(403).json({ success: false, message: "Bạn không có quyền Admin!" });
+        }
+
+        const users = await User.find().select("-hashedPassword").sort({ createdAt: -1 });
+        res.status(200).json({ success: true, users });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi khi lấy danh sách" });
+    }
+};
+
+// 3. Cập nhật hồ sơ
 export const updateProfile = async (req, res) => {
     try {
         const { displayName, phone } = req.body;
-        const userId = req.user._id;
-
         const updatedUser = await User.findByIdAndUpdate(
-            userId,
+            req.user._id,
             { displayName, phone },
-            { new: true, runValidators: true }
+            { new: true }
         );
-
-        res.status(200).json({
-            success: true,
-            message: "Cập nhật thành công!",
-            user: updatedUser
-        });
+        res.status(200).json({ success: true, user: updatedUser });
     } catch (error) {
-        res.status(500).json({ success: false, message: "Lỗi khi lưu dữ liệu" });
+        res.status(500).json({ success: false, message: "Lỗi cập nhật" });
     }
 };
